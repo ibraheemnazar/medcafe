@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { MapPin, Instagram, Utensils, Clock, Coffee, ChevronRight, ExternalLink, X, Download, Star, MessageSquare, Send } from 'lucide-react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { MapPin, Instagram, Utensils, Clock, Coffee, ChevronRight, ExternalLink, X, Download, Star, MessageSquare, Send, Phone } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const App = () => {
   const [logoError, setLogoError] = useState(false);
@@ -24,7 +24,8 @@ const App = () => {
       googleMaps: "https://maps.app.goo.gl/cNGPNxG21ZAd51iH9",
       instagram: "https://www.instagram.com/medcafe.iq/",
       // Optional: Keep the PDF link if you still have the file in the public folder
-      pdfDownload: "/menu.pdf" 
+      pdfDownload: "/menu.pdf",
+      phone: "tel:+9647760202032"
     },
     
     // 👇 UPDATE THIS SECTION
@@ -46,8 +47,7 @@ const App = () => {
     hours: "Open Daily: 8am - 1am"
   };
 
-  // Added ': any' to fix the TypeScript error
-  const handleSubmitRating = (e: any) => {
+  const handleSubmitRating = (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     // Here you would typically send the data to a backend
     // For now, we simulate a successful submission
@@ -66,7 +66,7 @@ const App = () => {
   };
 
   // Animation Variants
-  const containerVariants: Variants = {
+  const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -74,12 +74,12 @@ const App = () => {
     }
   };
 
-  const itemVariants: Variants = {
+  const itemVariants = {
     hidden: { y: 30, opacity: 0 },
     show: { 
       y: 0, 
       opacity: 1,
-      transition: { type: "spring", stiffness: 60, damping: 15 }
+      transition: { type: "spring" as const, stiffness: 60, damping: 15 }
     }
   };
 
@@ -143,32 +143,35 @@ const App = () => {
             icon={<Utensils size={20} />}
             label="View Our Menu"
             subLabel="Seasonal Brews & Bites"
-            variants={itemVariants}
-          />
+            variants={itemVariants} href={undefined} primary={undefined} download={undefined}          />
 
           <LinkButton 
-            href={cafeDetails.links.instagram} 
+            href={cafeDetails.links.instagram}
             icon={<Instagram size={20} />}
             label="Instagram"
             subLabel="@medcafe.iq"
-            variants={itemVariants}
-          />
+            variants={itemVariants} onClick={undefined} primary={undefined} download={undefined}          />
 
           <LinkButton 
-            href={cafeDetails.links.googleMaps} 
+            href={cafeDetails.links.googleMaps}
             icon={<MapPin size={20} />}
             label="Find Location"
             subLabel="Get Directions via Google Maps"
-            variants={itemVariants}
-          />
+            variants={itemVariants} onClick={undefined} primary={undefined} download={undefined}          />
 
           <LinkButton 
             onClick={() => setIsRatingOpen(true)}
             icon={<MessageSquare size={20} />}
             label="Rate Your Experience"
             subLabel="We value your feedback"
-            variants={itemVariants}
-          />
+            variants={itemVariants} href={undefined} primary={undefined} download={undefined}          />
+
+          <LinkButton 
+            href={cafeDetails.links.phone}
+            icon={<Phone size={20} />}
+            label="Call Us"
+            subLabel="+964 776 020 2032"
+            variants={itemVariants} onClick={undefined} primary={undefined} download={undefined}          />
 
         </motion.main>
 
@@ -184,8 +187,11 @@ const App = () => {
             <p className="text-[#3E2723] text-lg font-serif">{cafeDetails.hours}</p>
           </motion.div>
           
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center flex flex-col items-center gap-1.5">
             <p className="text-xs text-[#8D6E63]/60 font-medium">© 2026 {cafeDetails.name}</p>
+            <p className="text-[10px] text-[#8D6E63]/40 font-medium tracking-widest uppercase">
+              Designed by <a href="https://90codelab.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#8D6E63]/60 hover:text-[#D4A373] transition-colors cursor-pointer">90codelab</a>
+            </p>
           </div>
         </motion.footer>
 
@@ -210,86 +216,86 @@ const App = () => {
               className="relative w-full max-w-sm bg-[#FDFBF7] rounded-2xl shadow-2xl p-6 ring-1 ring-[#EFEBE9] overflow-hidden"
             >
                <button 
-                  onClick={resetRating}
-                  className="absolute top-4 right-4 p-1 hover:bg-[#EFEBE9] rounded-full text-[#8D6E63] transition-colors"
+                 onClick={resetRating}
+                 className="absolute top-4 right-4 p-1 hover:bg-[#EFEBE9] rounded-full text-[#8D6E63] transition-colors"
                >
                  <X size={20} />
                </button>
 
                {!isSubmitted ? (
                  <form onSubmit={handleSubmitRating} className="flex flex-col items-center text-center space-y-6 pt-2">
-                    <div>
-                        <h2 className="text-xl font-serif font-bold text-[#3E2723]">How was your visit?</h2>
-                        <p className="text-sm text-[#8D6E63] mt-1">Tap a star to rate</p>
-                    </div>
+                   <div>
+                       <h2 className="text-xl font-serif font-bold text-[#3E2723]">How was your visit?</h2>
+                       <p className="text-sm text-[#8D6E63] mt-1">Tap a star to rate</p>
+                   </div>
 
-                    {/* Star Rating */}
-                    <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                                key={star}
-                                type="button"
-                                onMouseEnter={() => setHoverRating(star)}
-                                onMouseLeave={() => setHoverRating(0)}
-                                onClick={() => setRating(star)}
-                                className="focus:outline-none transition-transform hover:scale-110"
-                            >
-                                <Star 
-                                    size={32} 
-                                    className={`${
-                                        star <= (hoverRating || rating) 
-                                        ? "fill-[#D4A373] text-[#D4A373]" 
-                                        : "fill-transparent text-[#EFEBE9] stroke-[1.5px]"
-                                    } transition-colors duration-200`}
-                                />
-                            </button>
-                        ))}
-                    </div>
+                   {/* Star Rating */}
+                   <div className="flex gap-2">
+                       {[1, 2, 3, 4, 5].map((star) => (
+                           <button
+                               key={star}
+                               type="button"
+                               onMouseEnter={() => setHoverRating(star)}
+                               onMouseLeave={() => setHoverRating(0)}
+                               onClick={() => setRating(star)}
+                               className="focus:outline-none transition-transform hover:scale-110"
+                           >
+                               <Star 
+                                   size={32} 
+                                   className={`${
+                                       star <= (hoverRating || rating) 
+                                       ? "fill-[#D4A373] text-[#D4A373]" 
+                                       : "fill-transparent text-[#EFEBE9] stroke-[1.5px]"
+                                   } transition-colors duration-200`}
+                               />
+                           </button>
+                       ))}
+                   </div>
 
-                    {/* Feedback Text Area */}
-                    <div className="w-full">
-                        <textarea
-                            value={feedback}
-                            onChange={(e) => setFeedback(e.target.value)}
-                            placeholder="Tell us about your experience..."
-                            className="w-full h-24 p-3 rounded-xl bg-white border border-[#EFEBE9] text-[#3E2723] placeholder:text-[#D7CCC8] focus:outline-none focus:border-[#D4A373] resize-none text-sm transition-all"
-                        />
-                    </div>
+                   {/* Feedback Text Area */}
+                   <div className="w-full">
+                       <textarea
+                           value={feedback}
+                           onChange={(e) => setFeedback(e.target.value)}
+                           placeholder="Tell us about your experience..."
+                           className="w-full h-24 p-3 rounded-xl bg-white border border-[#EFEBE9] text-[#3E2723] placeholder:text-[#D7CCC8] focus:outline-none focus:border-[#D4A373] resize-none text-sm transition-all"
+                       />
+                   </div>
 
-                    <button 
-                        type="submit"
-                        disabled={rating === 0}
-                        className={`
-                            w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all
-                            ${rating > 0 
-                                ? "bg-[#3E2723] text-white shadow-lg hover:bg-[#5D4037] transform hover:scale-[1.02]" 
-                                : "bg-[#EFEBE9] text-[#D7CCC8] cursor-not-allowed"
-                            }
-                        `}
-                    >
-                        <span>Submit Review</span>
-                        <Send size={16} />
-                    </button>
+                   <button 
+                       type="submit"
+                       disabled={rating === 0}
+                       className={`
+                           w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all
+                           ${rating > 0 
+                               ? "bg-[#3E2723] text-white shadow-lg hover:bg-[#5D4037] transform hover:scale-[1.02]" 
+                               : "bg-[#EFEBE9] text-[#D7CCC8] cursor-not-allowed"
+                           }
+                       `}
+                   >
+                       <span>Submit Review</span>
+                       <Send size={16} />
+                   </button>
                  </form>
                ) : (
                  <div className="py-8 flex flex-col items-center text-center space-y-4">
-                    <motion.div 
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-16 h-16 bg-[#EFEBE9] rounded-full flex items-center justify-center text-[#D4A373] mb-2"
-                    >
-                        <Star size={32} className="fill-[#D4A373]" />
-                    </motion.div>
-                    <div>
-                        <h2 className="text-xl font-serif font-bold text-[#3E2723]">Thank You!</h2>
-                        <p className="text-[#8D6E63] text-sm mt-1 max-w-[200px] mx-auto">Your feedback helps us brew better coffee.</p>
-                    </div>
-                    <button 
-                        onClick={resetRating}
-                        className="mt-4 text-[#D4A373] text-sm font-semibold hover:underline"
-                    >
-                        Close
-                    </button>
+                   <motion.div 
+                       initial={{ scale: 0 }}
+                       animate={{ scale: 1 }}
+                       className="w-16 h-16 bg-[#EFEBE9] rounded-full flex items-center justify-center text-[#D4A373] mb-2"
+                   >
+                       <Star size={32} className="fill-[#D4A373]" />
+                   </motion.div>
+                   <div>
+                       <h2 className="text-xl font-serif font-bold text-[#3E2723]">Thank You!</h2>
+                       <p className="text-[#8D6E63] text-sm mt-1 max-w-200 mx-auto">Your feedback helps us brew better coffee.</p>
+                   </div>
+                   <button 
+                       onClick={resetRating}
+                       className="mt-4 text-[#D4A373] text-sm font-semibold hover:underline"
+                   >
+                       Close
+                   </button>
                  </div>
                )}
             </motion.div>
@@ -381,12 +387,22 @@ const App = () => {
 };
 
 // Reusable Motion Button Component
-// Added type ': any' to props to prevent TS errors
-const LinkButton = ({ href, onClick, icon, label, subLabel, primary, variants, download }: any) => {
+interface LinkButtonProps {
+  href?: string;
+  onClick?: () => void;
+  icon: React.ReactNode;
+  label: string;
+  subLabel: string;
+  primary?: boolean;
+  variants?: any;
+  download?: boolean | string;
+}
+
+const LinkButton = ({ href, onClick, icon, label, subLabel, primary, variants, download }: LinkButtonProps) => {
   const isLink = !!href;
   const Component = isLink ? motion.a : motion.button;
   const specificProps = isLink 
-    ? { href, target: "_blank", rel: "noopener noreferrer", download } 
+    ? { href, target: "_blank", rel: "noopener noreferrer", ...(download && { download }) } 
     : { onClick, type: "button" as const };
 
   return (
