@@ -1,7 +1,7 @@
 "use client";
-import React, { useState } from 'react';
-import { MapPin, Instagram, Utensils, Clock, Coffee, ChevronRight, ExternalLink, X, Download, Star, MessageSquare, Send, Phone } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { MapPin, Instagram, Utensils, Clock, Coffee, ChevronRight, ExternalLink, X, Download, Star, MessageSquare, Send, Phone, MessageCircle } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 const App = () => {
   const [logoError, setLogoError] = useState(false);
@@ -14,6 +14,9 @@ const App = () => {
   const [feedback, setFeedback] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Contact Modal State
+  const [isContactOpen, setIsContactOpen] = useState(false);
+
   // Mock Data
   const cafeDetails = {
     logo: "med.jpg",
@@ -25,7 +28,8 @@ const App = () => {
       instagram: "https://www.instagram.com/medcafe.iq/",
       // Optional: Keep the PDF link if you still have the file in the public folder
       pdfDownload: "/menu.pdf",
-      phone: "tel:+9647760202032"
+      phone: "tel:+9647760202032",
+      whatsapp: "https://wa.me/9647760202032"
     },
     
     // 👇 UPDATE THIS SECTION
@@ -66,7 +70,7 @@ const App = () => {
   };
 
   // Animation Variants
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -74,7 +78,7 @@ const App = () => {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 30, opacity: 0 },
     show: { 
       y: 0, 
@@ -84,7 +88,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#FDFBF7] text-[#2C2420] font-sans selection:bg-[#D4A373] selection:text-white overflow-hidden relative">
+    <div className="min-h-dvh bg-[#FDFBF7] text-[#2C2420] font-sans selection:bg-[#D4A373] selection:text-white overflow-hidden relative">
       
       {/* Ambient Background Motion */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -105,7 +109,7 @@ const App = () => {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="relative z-10 max-w-md mx-auto min-h-[100dvh] flex flex-col px-6 py-8 md:py-12"
+        className="relative z-10 max-w-md mx-auto min-h-dvh flex flex-col px-6 py-8 md:py-12"
       >
         
         {/* Header Section */}
@@ -143,35 +147,41 @@ const App = () => {
             icon={<Utensils size={20} />}
             label="View Our Menu"
             subLabel="Seasonal Brews & Bites"
-            variants={itemVariants} href={undefined} primary={undefined} download={undefined}          />
+            variants={itemVariants}
+          />
 
           <LinkButton 
             href={cafeDetails.links.instagram}
             icon={<Instagram size={20} />}
             label="Instagram"
             subLabel="@medcafe.iq"
-            variants={itemVariants} onClick={undefined} primary={undefined} download={undefined}          />
+            variants={itemVariants}
+          />
 
           <LinkButton 
             href={cafeDetails.links.googleMaps}
             icon={<MapPin size={20} />}
             label="Find Location"
             subLabel="Get Directions via Google Maps"
-            variants={itemVariants} onClick={undefined} primary={undefined} download={undefined}          />
+            variants={itemVariants}
+          />
 
           <LinkButton 
             onClick={() => setIsRatingOpen(true)}
             icon={<MessageSquare size={20} />}
             label="Rate Your Experience"
             subLabel="We value your feedback"
-            variants={itemVariants} href={undefined} primary={undefined} download={undefined}          />
+            variants={itemVariants}
+          />
 
+          {/* Updated Contact Button */}
           <LinkButton 
-            href={cafeDetails.links.phone}
+            onClick={() => setIsContactOpen(true)}
             icon={<Phone size={20} />}
-            label="Call Us"
-            subLabel="+964 776 020 2032"
-            variants={itemVariants} onClick={undefined} primary={undefined} download={undefined}          />
+            label="Contact Us"
+            subLabel="Call or WhatsApp"
+            variants={itemVariants}
+          />
 
         </motion.main>
 
@@ -196,6 +206,80 @@ const App = () => {
         </motion.footer>
 
       </motion.div>
+
+      {/* CONTACT MODAL */}
+      <AnimatePresence>
+        {isContactOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-[#3E2723]/60 backdrop-blur-sm"
+              onClick={() => setIsContactOpen(false)}
+            />
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-[#FDFBF7] rounded-2xl shadow-2xl p-6 ring-1 ring-[#EFEBE9] overflow-hidden"
+            >
+               <button 
+                 onClick={() => setIsContactOpen(false)}
+                 className="absolute top-4 right-4 p-1 hover:bg-[#EFEBE9] rounded-full text-[#8D6E63] transition-colors"
+               >
+                 <X size={20} />
+               </button>
+
+               <div className="flex flex-col items-center text-center space-y-6 pt-2">
+                   <div>
+                       <h2 className="text-xl font-serif font-bold text-[#3E2723]">Get in Touch</h2>
+                       <p className="text-sm text-[#8D6E63] mt-1">Choose how you'd like to connect</p>
+                   </div>
+
+                   <div className="w-full space-y-3">
+                       {/* Regular Call Button */}
+                       <a 
+                           href={cafeDetails.links.phone}
+                           className="flex items-center justify-between w-full p-4 bg-white border border-[#EFEBE9] rounded-xl shadow-sm hover:border-[#D4A373] hover:shadow-md transition-all group"
+                       >
+                           <div className="flex items-center gap-3">
+                               <div className="p-2 bg-[#F5F5F4] rounded-full text-[#5D4037] group-hover:bg-[#EFEBE9] transition-colors">
+                                   <Phone size={20} />
+                               </div>
+                               <div className="text-left">
+                                   <p className="font-bold text-[#3E2723]">Call Mobile</p>
+                                   <p className="text-xs text-[#8D6E63]">Cellular Network</p>
+                               </div>
+                           </div>
+                           <ChevronRight size={18} className="text-[#D4A373]" />
+                       </a>
+
+                       {/* WhatsApp Button */}
+                       <a 
+                           href={cafeDetails.links.whatsapp}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="flex items-center justify-between w-full p-4 bg-[#25D366]/10 border border-[#25D366]/20 rounded-xl shadow-sm hover:bg-[#25D366]/20 hover:border-[#25D366]/40 transition-all group"
+                       >
+                           <div className="flex items-center gap-3">
+                               <div className="p-2 bg-[#25D366]/20 rounded-full text-[#128C7E] group-hover:bg-[#25D366]/30 transition-colors">
+                                   <MessageCircle size={20} />
+                               </div>
+                               <div className="text-left">
+                                   <p className="font-bold text-[#075E54]">WhatsApp</p>
+                                   <p className="text-xs text-[#075E54]/70">Chat or Call</p>
+                               </div>
+                           </div>
+                           <ExternalLink size={18} className="text-[#128C7E]" />
+                       </a>
+                   </div>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* RATING MODAL */}
       <AnimatePresence>
@@ -366,8 +450,8 @@ const App = () => {
                       ))
                    ) : (
                       <div className="text-center py-20 text-[#8D6E63]">
-                         <p>No menu images found.</p>
-                         <p className="text-sm mt-2">Please upload menu-1.png, menu-2.png etc.</p>
+                          <p>No menu images found.</p>
+                          <p className="text-sm mt-2">Please upload menu-1.png, menu-2.png etc.</p>
                       </div>
                    )}
                    
@@ -394,8 +478,8 @@ interface LinkButtonProps {
   label: string;
   subLabel: string;
   primary?: boolean;
-  variants?: any;
-  download?: boolean | string;
+  variants?: Variants;
+  download?: boolean;
 }
 
 const LinkButton = ({ href, onClick, icon, label, subLabel, primary, variants, download }: LinkButtonProps) => {
