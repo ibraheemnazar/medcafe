@@ -1,47 +1,48 @@
 # Med Cafe
 
-The QR code points to **https://medcafe-one.vercel.app/**. Menu management is at **https://medcafe-one.vercel.app/admin**.
+Public cafe and printed QR destination: https://medcafe-one.vercel.app/
 
-## Update the menu using GitHub
+Admin entry point: https://medcafe-one.vercel.app/admin
 
-No Vercel dashboard access, API key, storage account, or separate cafe password is required. GitHub is the publishing login. The existing Vercel GitHub integration deploys updates from `main`.
+## Cafe login and menu uploads
 
-1. Prepare a PDF named **menu.pdf**, up to **20 MB**, with **1–100 pages**, without password protection.
-2. Open `/admin` to preview the new PDF locally on your device. This does not upload or publish anything.
-3. Select **Sign in & replace PDF**, which opens [GitHub's upload page for content/](https://github.com/ibraheemnazar/medcafe/upload/main/content). Sign in to GitHub with repository write access.
-4. Upload your `menu.pdf` and **Commit changes** to **main**. It replaces `content/menu.pdf`. Do not upload to the repository root or rename the file.
-5. Wait for the deployment to succeed (usually a few minutes), then open the original QR link and select **View Our Menu**. The QR code stays unchanged.
+The admin link redirects to the dedicated cafe service at https://medcafe.srv2124063.hstgr.cloud/admin. Sign in with the cafe username/password, choose a PDF, optionally open its preview, and press **Publish new menu**. Customers using the original QR code get the latest menu immediately after a successful upload. A GitHub account is not required.
 
-If GitHub requires a pull request, merge the PDF change into `main` to publish. A wrong filename, invalid PDF, or failed build stops the deployment and leaves the previous website live. Fix the PDF and commit again. Previewing a PDF on `/admin` alone never publishes it.
+PDFs can be up to 20 MB with 1–100 pages and cannot be password protected. Files are checked on the server before publication. Invalid uploads leave the existing menu live. Original PDFs are retained, and uploads are stored on a persistent host volume.
 
-## Access and history
+To update the login, expand **Change username & password**, enter the current password and new credentials, and save. This invalidates all old sessions. The password must be at least 12 characters.
 
-- Only GitHub collaborators with write access can change the repository. Viewing `/admin` does not grant upload access.
-- Repository access is distinct from Vercel access. Ibraheem can manage collaborators through the repository's **Settings → Collaborators**; the `bariqnet` account already has write access.
-- The repository is public, so PDFs and historical revisions are public. Upload only the public cafe menu.
-- [Previous versions are in Git history](https://github.com/ibraheemnazar/medcafe/commits/main/content/menu.pdf). Restore an older `content/menu.pdf` by committing that version back to `main`.
-- The initial PDF contains exactly the nine menu images used by the previous cafe page; the unused tenth image is not included.
+The generated credentials are supplied privately outside the repository. Never commit them, a password hash, session data, or a database backup to GitHub.
 
-## How it works
+## Architecture
 
-`content/menu.pdf` is the single source of truth. At install/build time, `scripts/prepare-menu.mjs` parses it and enforces file size, page count, and exact filename. It writes a generated manifest and an identical static PDF with a SHA-256 filename. Different PDFs receive different URLs so browsers cannot serve a previous PDF from cache. The API always returns the menu included in the current deployment. Validation requires no environment variables or network storage.
+- Next.js on the existing Vercel deployment keeps the cafe page and QR address.
+- `/api/menu` reads fresh metadata from the cafe service. A brief service failure returns an error rather than silently displaying an old menu.
+- PDF bytes are served directly from the dedicated service over HTTPS with content-hashed URLs and CORS for the customer PDF viewer.
+- `/admin` redirects to the HTTPS cafe service, which owns login and upload handling.
+- `admin-service/` runs Flask/Gunicorn in an isolated, non-root container on the existing Hostinger VPS. Credentials, SQLite sessions/rate counters/menu metadata and uploaded PDFs are in `/opt/medcafe-admin/data`, outside the code checkout.
+- Server sessions are opaque random tokens stored hashed in SQLite, expire after eight hours, and use Secure/HttpOnly/SameSite=Strict cookies. Mutations check both Origin and a per-session CSRF token. Login attempts are limited to ten per source IP per 15-minute window.
+- Daily local backups copy the SQLite database consistently and archive credentials and uploaded files. Fourteen snapshots are retained in `/opt/medcafe-admin/backups`. These are local recovery copies; copy them off-host for disaster recovery.
+- The previously committed `content/menu.pdf` is kept as the original source snapshot. Runtime uploads are authoritative and do not change the Git repository. The previous GitHub-only upload page and old generated credentials are superseded.
 
-This update replaces the earlier draft's separate password/Blob implementation. The previous generated cafe credentials are not used; no credentials belong in the repository.
-
-## Local development and checks
-
-Use Node.js 22.13+:
+## Local checks
 
 ```sh
 npm ci
-npm run dev
-```
-
-```sh
 npm run lint
 npm run typecheck
 npm test
 npm run build
 ```
 
-If you replace `content/menu.pdf` while the development server is running, restart it or run `npm run prepare:menu` to regenerate the PDF asset and manifest. Generated files are ignored by Git; commit the source PDF.
+For the service:
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r admin-service/requirements.txt
+.venv/bin/python -m unittest discover -s admin-service/tests -v
+```
+
+The service refuses to start without an existing credentials file. To bootstrap a fresh instance, run `admin-service/bootstrap.py /persistent/path/credentials.json medcafe` once, save its printed password securely, and point `DATA_DIR` at that directory. The script refuses to overwrite an account. Never run initialization against an existing production directory.
+
+Deploy with the service's Docker Compose file. The directory must be owned by UID/GID 10001, the existing `coolify` Docker network must exist, and HTTPS is handled by the existing Traefik proxy. No Vercel secrets or configuration changes are needed.

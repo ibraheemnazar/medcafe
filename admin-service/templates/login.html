@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block content %}
+<main class="login-layout"><section class="intro"><p class="eyebrow">FOR THE CAFE TEAM</p><h1>A fresh menu.<br>One simple login.</h1><p>Upload your latest PDF and keep the same QR code.</p></section>
+<section class="card login"><span class="lock" aria-hidden="true">M</span><h2>Welcome back</h2><p class="muted">Sign in to manage the cafe menu.</p>{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="{{ url_for('login') }}" class="fields"><label>Username<input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="64"></label><label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label><button type="submit" class="primary">Sign in <span>↗</span></button></form><p class="note">Private access for your cafe team</p></section></main>
+{% endblock %}
