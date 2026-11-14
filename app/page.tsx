@@ -1,11 +1,36 @@
 "use client";
-import { useState } from 'react';
-import { MapPin, Instagram, Utensils, Clock, Coffee, ChevronRight, ExternalLink, X, Download, Star, MessageSquare, Send, Phone, MessageCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import PublicMenuViewer from "@/components/public-menu";
+import Image from "next/image";
+import { MapPin, Instagram, Utensils, Clock, Coffee, ChevronRight, ExternalLink, X, Star, MessageSquare, Send, Phone, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 const App = () => {
   const [logoError, setLogoError] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuDialog = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    menuDialog.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") { setIsMenuOpen(false); return; }
+      if (event.key !== "Tab" || !menuDialog.current) return;
+      const controls = Array.from(menuDialog.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], [tabindex="0"]'));
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKey);
+      previousFocus?.focus();
+    };
+  }, [isMenuOpen]);
   
   // Rating State
   const [isRatingOpen, setIsRatingOpen] = useState(false);
@@ -26,27 +51,9 @@ const App = () => {
     links: {
       googleMaps: "https://maps.app.goo.gl/cNGPNxG21ZAd51iH9",
       instagram: "https://www.instagram.com/medcafe.iq/",
-      // Optional: Keep the PDF link if you still have the file in the public folder
-      pdfDownload: "/menu.pdf",
       phone: "tel:+9647760202032",
       whatsapp: "https://wa.me/9647760202032"
     },
-    
-    // 👇 UPDATE THIS SECTION
-    // 1. Put your screenshots in the 'public' folder.
-    // 2. Rename them to menu-1.png, menu-2.png, etc.
-    // 3. Add them to this list:
-    menuImages: [
-      "/menu-1.png", 
-      "/menu-2.png",
-      "/menu-3.png",
-      "/menu-4.png",
-      "/menu-5.png",
-      "/menu-6.png",
-      "/menu-7.png",
-      "/menu-8.png",
-      "/menu-9.png"
-    ],
     
     hours: "Open Daily: 8am - 1am"
   };
@@ -116,9 +123,11 @@ const App = () => {
         <header className="flex flex-col items-center text-center space-y-4 mb-8 md:mb-10">
           <div className="w-28 h-28 md:w-32 md:h-32 bg-white rounded-full flex items-center justify-center shadow-xl mb-2 ring-4 ring-[#EFEBE9] overflow-hidden relative">
             {!logoError ? (
-              <img 
+              <Image
                 src={cafeDetails.logo} 
                 alt={`${cafeDetails.name} Logo`} 
+                fill
+                sizes="128px"
                 className="w-full h-full object-cover"
                 onError={() => setLogoError(true)}
               />
@@ -235,7 +244,7 @@ const App = () => {
                <div className="flex flex-col items-center text-center space-y-6 pt-2">
                    <div>
                        <h2 className="text-xl font-serif font-bold text-[#3E2723]">Get in Touch</h2>
-                       <p className="text-sm text-[#8D6E63] mt-1">Choose how you'd like to connect</p>
+                       <p className="text-sm text-[#8D6E63] mt-1">Choose how you&apos;d like to connect</p>
                    </div>
 
                    <div className="w-full space-y-3">
@@ -390,7 +399,7 @@ const App = () => {
       {/* IMAGE GALLERY MODAL */}
       <AnimatePresence>
         {isMenuOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
+          <div ref={menuDialog} className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Our Menu">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -414,19 +423,9 @@ const App = () => {
                   <h2 className="font-bold text-lg font-serif">Our Menu</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                   {/* Optional: Button to download the full PDF if it exists */}
-                   {cafeDetails.links.pdfDownload && (
-                     <a 
-                      href={cafeDetails.links.pdfDownload} 
-                      download
-                      className="hidden sm:flex items-center gap-1 text-xs text-[#8D6E63] hover:text-[#3E2723] mr-2 transition-colors px-3 py-1.5 rounded-full border border-[#EFEBE9] hover:border-[#D4A373]"
-                    >
-                      <Download size={14} />
-                      <span className="hidden sm:inline">PDF</span>
-                    </a>
-                   )}
                   <button 
                     onClick={() => setIsMenuOpen(false)}
+                    aria-label="Close menu"
                     className="p-2 hover:bg-[#F5F5F4] rounded-full text-[#5D4037] transition-colors"
                   >
                     <X size={24} />
@@ -434,31 +433,9 @@ const App = () => {
                 </div>
               </div>
 
-              {/* IMAGE SCROLLER */}
+              {/* Resolve the latest published menu whenever the dialog opens. */}
               <div className="flex-1 overflow-y-auto p-2 sm:p-4 bg-[#EFEBE9] scroll-smooth">
-                <div className="flex flex-col gap-2 sm:gap-4 items-center">
-                   {cafeDetails.menuImages && cafeDetails.menuImages.length > 0 ? (
-                      cafeDetails.menuImages.map((imgSrc, index) => (
-                        <div key={index} className="w-full max-w-2xl bg-white p-1 sm:p-2 rounded-lg shadow-md">
-                          <img 
-                            src={imgSrc} 
-                            alt={`Menu Page ${index + 1}`}
-                            className="w-full h-auto rounded"
-                            loading="lazy" 
-                          />
-                        </div>
-                      ))
-                   ) : (
-                      <div className="text-center py-20 text-[#8D6E63]">
-                          <p>No menu images found.</p>
-                          <p className="text-sm mt-2">Please upload menu-1.png, menu-2.png etc.</p>
-                      </div>
-                   )}
-                   
-                   <div className="pb-8 pt-4 text-center">
-                     <p className="text-xs text-[#8D6E63]">End of Menu</p>
-                   </div>
-                </div>
+                <PublicMenuViewer />
               </div>
 
             </motion.div>

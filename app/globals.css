@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.pdf-viewer { width: 100%; max-width: 900px; margin: auto; color: #3e2723; }
+.pdf-viewer .react-pdf__Page { background: white; overflow: hidden; }
+.pdf-viewer canvas { display: block; max-width: 100%; height: auto !important; }
+.pdf-message { padding: 48px 20px; text-align: center; font-size: 14px; color: #765c50; }
+.pdf-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 0 2px; }
+.pdf-controls a { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; text-decoration: underline; padding: 8px; }
+.pdf-pagination { display: flex; align-items: center; gap: 16px; font-size: 12px; }
+.pdf-pagination button { padding: 9px; border: 1px solid #cebaab; border-radius: 6px; background: #fdfbf7; cursor: pointer; }
+.pdf-pagination button:disabled { opacity: .35; cursor: not-allowed; }
+.pdf-controls :focus-visible { outline: 3px solid #9b7a65; outline-offset: 3px; }
