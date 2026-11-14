@@ -1,0 +1,52 @@
+name: medcafe-admin
+services:
+  admin:
+    build: .
+    image: medcafe-admin:20261114
+    container_name: medcafe-admin
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 384m
+    cpus: 0.75
+    pids_limit: 80
+    environment:
+      DATA_DIR: /data
+      HOME: /tmp
+      PUBLIC_ORIGIN: https://medcafe.srv2124063.hstgr.cloud
+    volumes:
+      - /opt/medcafe-admin/data:/data
+    networks: [coolify]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8788/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: coolify
+      traefik.http.routers.medcafe-admin.rule: Host(`medcafe.srv2124063.hstgr.cloud`)
+      traefik.http.routers.medcafe-admin.entrypoints: https
+      traefik.http.routers.medcafe-admin.tls: 'true'
+      traefik.http.routers.medcafe-admin.tls.certresolver: letsencrypt
+      traefik.http.routers.medcafe-admin.service: medcafe-admin
+      traefik.http.routers.medcafe-admin.middlewares: medcafe-admin-limit
+      traefik.http.middlewares.medcafe-admin-limit.ratelimit.average: '20'
+      traefik.http.middlewares.medcafe-admin-limit.ratelimit.burst: '40'
+      traefik.http.services.medcafe-admin.loadbalancer.server.port: '8788'
+      traefik.http.routers.medcafe-admin-http.rule: Host(`medcafe.srv2124063.hstgr.cloud`)
+      traefik.http.routers.medcafe-admin-http.entrypoints: http
+      traefik.http.routers.medcafe-admin-http.middlewares: medcafe-admin-https
+      traefik.http.routers.medcafe-admin-http.service: medcafe-admin
+      traefik.http.middlewares.medcafe-admin-https.redirectscheme.scheme: https
+      traefik.http.middlewares.medcafe-admin-https.redirectscheme.permanent: 'true'
+networks:
+  coolify:
+    external: true
