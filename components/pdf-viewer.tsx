@@ -17,7 +17,7 @@ export default function PdfViewer({
   onInvalid,
 }: {
   url: string;
-  onReady?: () => void;
+  onReady?: (pages: number) => void;
   onInvalid?: () => void;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export default function PdfViewer({
           setPages(numPages);
           setPage(1);
           setError(false);
-          onReady?.();
+          onReady?.(numPages);
         }}
         onLoadError={() => {
           setError(true);

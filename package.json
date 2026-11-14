@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/prepare-menu.mjs && next dev",
+    "build": "node scripts/prepare-menu.mjs && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test tests/*.test.ts",
-    "typecheck": "tsc --noEmit",
-    "admin:setup": "node scripts/setup-admin.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "node scripts/prepare-menu.mjs && tsc --noEmit",
+    "prepare:menu": "node scripts/prepare-menu.mjs",
+    "postinstall": "node scripts/prepare-menu.mjs"
   },
   "dependencies": {
-    "@vercel/blob": "^2.8.2",
     "framer-motion": "^12.25.0",
     "lucide-react": "^0.562.0",
     "next": "^16.4.5",
@@ -29,13 +29,9 @@
     "eslint": "^9",
     "eslint-config-next": "^16.4.5",
     "tailwindcss": "^4",
-    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "overrides": {
-    "@vercel/cli-config": {
-      "zod": "^4.6.7"
-    },
     "@typescript-eslint/typescript-estree": {
       "minimatch": "^11.0.4"
     }

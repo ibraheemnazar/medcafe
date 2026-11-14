@@ -47,24 +47,5 @@ export default function PublicMenuViewer() {
         Loading the latest menu…
       </p>
     );
-  if (menu.kind === "pdf") return <PdfViewer key={menu.url} url={menu.url} />;
-  return (
-    <div className="flex flex-col gap-2 sm:gap-4 items-center">
-      {menu.images.map((src, i) => (
-        <div
-          key={src}
-          className="w-full max-w-2xl bg-white p-1 sm:p-2 rounded-lg shadow-md"
-        >
-          {/* Existing image menu remains available until the first PDF is published. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={`Menu page ${i + 1}`}
-            className="w-full h-auto rounded"
-            loading="lazy"
-          />
-        </div>
-      ))}
-    </div>
-  );
+  return <PdfViewer key={menu.url} url={menu.url} />;
 }
