@@ -25,13 +25,13 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.pdf-viewer { width: 100%; max-width: 900px; margin: auto; color: #3e2723; }
-.pdf-viewer .react-pdf__Page { background: white; overflow: hidden; }
-.pdf-viewer canvas { display: block; max-width: 100%; height: auto !important; }
 .pdf-message { padding: 48px 20px; text-align: center; font-size: 14px; color: #765c50; }
-.pdf-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 0 2px; }
-.pdf-controls a { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; text-decoration: underline; padding: 8px; }
-.pdf-pagination { display: flex; align-items: center; gap: 16px; font-size: 12px; }
-.pdf-pagination button { padding: 9px; border: 1px solid #cebaab; border-radius: 6px; background: #fdfbf7; cursor: pointer; }
-.pdf-pagination button:disabled { opacity: .35; cursor: not-allowed; }
-.pdf-controls :focus-visible { outline: 3px solid #9b7a65; outline-offset: 3px; }
+.menu-page-viewer { width: 100%; max-width: 900px; margin: auto; color: #3e2723; position: relative; }
+.menu-page-controls { display: flex; position: sticky; top: 0; z-index: 2; background: #fdfbf7; align-items: center; justify-content: center; gap: 22px; padding: 10px; margin-bottom: 10px; border: 1px solid #e8dfd7; border-radius: 8px; font-size: 13px; }
+.menu-page-controls button { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 1px solid #cebaab; border-radius: 6px; cursor: pointer; }
+.menu-page-controls button:disabled { opacity: .35; cursor: not-allowed; }
+.menu-page-image { display: block; width: 100%; height: auto; background: white; }
+.menu-image-status { position: absolute; top: 100px; left: 0; right: 0; z-index: 1; text-align: center; font-size: 13px; }
+.menu-download { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px 10px; font-size: 12px; text-decoration: underline; }
+.menu-retry { padding: 10px 16px; margin-top: 12px; border: 1px solid #cebaab; border-radius: 6px; cursor: pointer; }
+.menu-page-viewer :focus-visible { outline: 3px solid #9b7a65; outline-offset: 3px; }

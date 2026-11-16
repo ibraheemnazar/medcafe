@@ -8,6 +8,7 @@ import re
 import secrets
 import sqlite3
 import time
+import fcntl
 from functools import wraps
 from contextlib import closing
 from pathlib import Path
@@ -17,6 +18,7 @@ from pypdf import PdfReader
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
+from menu_images import prepare_page_images, read_page_images, RENDER_VERSION
 
 MAX_BYTES = 20 * 1024 * 1024
 MAX_PAGES = 100
@@ -66,6 +68,7 @@ def create_app(settings=None):
     directory.mkdir(parents=True, exist_ok=True)
     files = directory / "files"
     files.mkdir(mode=0o700, exist_ok=True)
+    image_root = directory / "page-images"
     cookie_name = "__Host-medcafe-admin" if app.config["SECURE_COOKIES"] else "medcafe-admin"
     credentials_path = directory / "credentials.json"
     if not credentials_path.exists():
@@ -142,7 +145,7 @@ def create_app(settings=None):
         row = db().execute("SELECT menus.* FROM menus JOIN current_menu ON menus.id=current_menu.id WHERE singleton=1").fetchone()
         return dict(row) if row else None
 
-    def publish(data, filename):
+    def publish_unlocked(data, filename):
         pages = validate_pdf(data)
         identity = hashlib.sha256(data).hexdigest()
         target = files / f"{identity}.pdf"
@@ -154,11 +157,21 @@ def create_app(settings=None):
                 stream.flush()
                 os.fsync(stream.fileno())
             temporary.replace(target)
+        prepare_page_images(target, image_root, identity, pages)
         name = re.sub(r"[\x00-\x1f\x7f/\\]", "", filename).strip()[:150] or "menu.pdf"
         with db():
             db().execute("INSERT INTO menus VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET filename=excluded.filename, published=excluded.published", (identity, name, len(data), pages, int(time.time())))
             db().execute("INSERT INTO current_menu VALUES(1, ?) ON CONFLICT(singleton) DO UPDATE SET id=excluded.id", (identity,))
         return identity
+
+    def publish(data, filename):
+        # Keep image conversion memory bounded even with concurrent admin requests.
+        with open(directory / "publish.lock", "a") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                raise ValueError("Another menu is being prepared. Please try again shortly.") from error
+            return publish_unlocked(data, filename)
 
     app.publish_pdf = publish
 
@@ -285,7 +298,21 @@ def create_app(settings=None):
         menu = current()
         if not menu:
             return jsonify(error="No menu published"), 503
-        return jsonify(kind="pdf", menu={"id": menu["id"], "filename": menu["filename"], "size": menu["size"], "pages": menu["pages"]}, url=f'{app.config["PUBLIC_ORIGIN"]}/menu/{menu["id"]}.pdf'), 200, {"Cache-Control": "no-store"}
+        images = read_page_images(image_root, menu["id"])
+        return jsonify(kind="pdf", menu={"id": menu["id"], "filename": menu["filename"], "size": menu["size"], "pages": menu["pages"]}, url=f'{app.config["PUBLIC_ORIGIN"]}/menu/{menu["id"]}.pdf', pageImages=[{"url": f'{app.config["PUBLIC_ORIGIN"]}/menu/{menu["id"]}/pages/{index}.jpg', "width": page["width"], "height": page["height"]} for index, page in enumerate(images, 1)]), 200, {"Cache-Control": "no-store"}
+
+    @app.get("/menu/<identity>/pages/<int:page>.jpg")
+    def menu_page(identity, page):
+        if not re.fullmatch(r"[a-f0-9]{64}", identity) or page < 1 or page > MAX_PAGES:
+            abort(404)
+        if not db().execute("SELECT 1 FROM menus WHERE id=?", (identity,)).fetchone():
+            abort(404)
+        images = read_page_images(image_root, identity)
+        if page > len(images):
+            abort(404)
+        response = send_file(image_root / RENDER_VERSION / identity / f"{page}.jpg", mimetype="image/jpeg", conditional=True, max_age=31536000)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
 
     @app.get("/menu/<identity>.pdf")
     def menu_pdf(identity):

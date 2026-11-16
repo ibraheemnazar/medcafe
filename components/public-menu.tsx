@@ -1,13 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import type { PublicMenu } from "@/lib/menu-types";
-
-const PdfViewer = dynamic(() => import("./pdf-viewer"), {
-  ssr: false,
-  loading: () => <p className="pdf-message">Loading PDF viewer…</p>,
-});
+import MenuPages from "./menu-pages";
 
 export default function PublicMenuViewer() {
   const [menu, setMenu] = useState<PublicMenu | null>(null);
@@ -15,15 +10,22 @@ export default function PublicMenuViewer() {
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    let cancelled = false;
+    const timeout = setTimeout(() => controller.abort(), 15000);
     fetch("/api/menu", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error();
         setMenu(await response.json());
       })
       .catch((error) => {
-        if (error.name !== "AbortError") setError(true);
-      });
-    return () => controller.abort();
+        if (error.name !== "AbortError" || !cancelled) setError(true);
+      })
+      .finally(() => clearTimeout(timeout));
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [attempt]);
 
   if (error)
@@ -47,5 +49,5 @@ export default function PublicMenuViewer() {
         Loading the latest menu…
       </p>
     );
-  return <PdfViewer key={menu.url} url={menu.url} />;
+  return <MenuPages key={menu.menu.id} menu={menu} />;
 }

@@ -18,9 +18,10 @@ The generated credentials are supplied privately outside the repository. Never c
 
 - Next.js on the existing Vercel deployment keeps the cafe page and QR address.
 - `/api/menu` reads fresh metadata from the cafe service. A brief service failure returns an error rather than silently displaying an old menu.
-- PDF bytes are served directly from the dedicated service over HTTPS with content-hashed URLs and CORS for the customer PDF viewer.
+- On upload, the server prepares JPEG previews with a maximum edge of 1600 pixels before publication. Customers load one page image at a time instead of decoding the full PDF on their phone. The original PDF is preserved for optional download; its bytes are unchanged.
+- Page images and original PDFs are served over HTTPS using content-hashed URLs. New uploads change the URL, preventing old cached pages from appearing. Conversion failure leaves the previous menu live.
 - `/admin` redirects to the HTTPS cafe service, which owns login and upload handling.
-- `admin-service/` runs Flask/Gunicorn in an isolated, non-root container on the existing Hostinger VPS. Credentials, SQLite sessions/rate counters/menu metadata and uploaded PDFs are in `/opt/medcafe-admin/data`, outside the code checkout.
+- `admin-service/` runs Flask/Gunicorn with Poppler and Pillow in an isolated, non-root container on the existing Hostinger VPS. Credentials, SQLite sessions/rate counters/menu metadata and uploaded PDFs are in `/opt/medcafe-admin/data`, outside the code checkout.
 - Server sessions are opaque random tokens stored hashed in SQLite, expire after eight hours, and use Secure/HttpOnly/SameSite=Strict cookies. Mutations check both Origin and a per-session CSRF token. Login attempts are limited to ten per source IP per 15-minute window.
 - Daily local backups copy the SQLite database consistently and archive credentials and uploaded files. Fourteen snapshots are retained in `/opt/medcafe-admin/backups`. These are local recovery copies; copy them off-host for disaster recovery.
 - The previously committed `content/menu.pdf` is kept as the original source snapshot. Runtime uploads are authoritative and do not change the Git repository. The previous GitHub-only upload page and old generated credentials are superseded.
@@ -46,3 +47,5 @@ python3 -m venv .venv
 The service refuses to start without an existing credentials file. To bootstrap a fresh instance, run `admin-service/bootstrap.py /persistent/path/credentials.json medcafe` once, save its printed password securely, and point `DATA_DIR` at that directory. The script refuses to overwrite an account. Never run initialization against an existing production directory.
 
 Deploy with the service's Docker Compose file. The directory must be owned by UID/GID 10001, the existing `coolify` Docker network must exist, and HTTPS is handled by the existing Traefik proxy. No Vercel secrets or configuration changes are needed.
+
+For existing stored PDFs, run `docker exec medcafe-admin python prepare_existing.py` after upgrading the service to prepare phone previews without republishing or changing the original PDF. Generated images can be rebuilt from the original PDFs in backups.

@@ -5,4 +5,5 @@ export type PublicMenu = {
   kind: "pdf";
   menu: { id: string; filename: string; size: number; pages: number };
   url: string;
+  pageImages: { url: string; width: number; height: number }[];
 };
