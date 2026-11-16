@@ -2,7 +2,7 @@ name: medcafe-admin
 services:
   admin:
     build: .
-    image: medcafe-admin:20261114
+    image: medcafe-admin:20261116
     container_name: medcafe-admin
     restart: unless-stopped
     read_only: true

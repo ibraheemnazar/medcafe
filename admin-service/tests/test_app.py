@@ -5,11 +5,15 @@ import secrets
 import sqlite3
 import tempfile
 import unittest
+import sys
+from unittest.mock import patch
 from contextlib import closing
 from pathlib import Path
 
 from pypdf import PdfWriter
 from werkzeug.security import generate_password_hash
+
+sys.path.insert(0, str(Path(__file__).parents[1]))
 
 spec = importlib.util.spec_from_file_location('cafe_app', Path(__file__).parents[1] / 'app.py')
 module = importlib.util.module_from_spec(spec)
@@ -128,6 +132,23 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(self.client.get('/menu/credentials.pdf').status_code,404)
         self.assertEqual(self.client.get('/menu/'+'0'*64+'.pdf').status_code,404)
         self.assertEqual(self.client.get('/credentials.json').status_code,404)
+
+    def test_phone_images_ready_before_publish(self):
+        self.login()
+        self.assertEqual(self.upload(pdf(2)).status_code,303)
+        menu=self.client.get('/api/menu').json
+        self.assertEqual(len(menu['pageImages']),2)
+        for page in menu['pageImages']:
+            self.assertLessEqual(max(page['width'], page['height']),1600)
+            path=page['url'].removeprefix(self.origin)
+            with self.client.get(path) as response:
+                self.assertEqual(response.status_code,200)
+                self.assertEqual(response.mimetype,'image/jpeg')
+                self.assertIn('immutable',response.headers['Cache-Control'])
+        self.assertEqual(self.client.get(f"/menu/{menu['menu']['id']}/pages/3.jpg").status_code,404)
+        with patch.object(module, 'prepare_page_images', side_effect=ValueError('Conversion failed')):
+            self.assertEqual(self.upload(pdf(3)).status_code,400)
+        self.assertEqual(self.client.get('/api/menu').json,menu)
 
 
 if __name__=='__main__': unittest.main()

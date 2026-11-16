@@ -15,5 +15,6 @@ export function getRepositoryMenu(): PublicMenu {
       pages: manifest.pages,
     },
     url: manifest.url,
+    pageImages: [],
   };
 }
